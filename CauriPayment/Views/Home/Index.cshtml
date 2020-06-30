@@ -1,0 +1,32 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+
+}
+
+<button type="button" onclick="GetData(12000)">12000</button>
+<button type="button" onclick="GetData(15000)">15000</button>
+<button type="button" onclick="GetData(20000)">20000</button>
+
+<div id="sample">
+
+</div>
+
+<script>
+    function GetData(price) {
+        $.ajax({
+            url: 'Home/GetData',
+            data: { price: price },
+            type: 'Post',
+            dataType: "json",
+            success: function (data) {
+                $.getScript(data.src, function () {
+                    $("#sample").append(data.body)
+                });
+
+            },
+            error: function () {
+
+            }
+        });
+    }
+</script>
