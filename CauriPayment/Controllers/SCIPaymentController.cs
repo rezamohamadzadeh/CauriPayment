@@ -26,7 +26,7 @@ namespace CauriPayment.Controllers
             return View();
         }
 
-        [HttpGet]
+        [HttpGet] 
         public async Task<IActionResult> GetCurrency()
         {
             var url = Configuration["SCI:GetCurrencies"];
