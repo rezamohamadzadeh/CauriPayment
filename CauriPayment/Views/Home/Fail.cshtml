@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Fail payment";
+
+}
+
+<div class="alert alert-danger"> Fail payment </div>
+<div class="table-responsive">
+    <table class="table table-bordered table-hover nowarp" width="100%">
+        <thead>
+            <tr>
+                <th>CheckoutId</th>
+                <th>State</th>
+                <th>PaymentID</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@Model.ik_co_id</td>
+                <td>@Model.ik_inv_st</td>
+                <td>@Model.ik_inv_id</td>
+            </tr>
+
+        </tbody>
+    </table>
+</div>

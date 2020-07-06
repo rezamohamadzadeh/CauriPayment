@@ -1,0 +1,19 @@
+﻿@model SCIModel
+@{
+    ViewData["Title"] = "Payment";
+}
+
+<h1>Payment</h1>
+
+<form name="payment"
+      method="post" action="https://sci.interkassa.com/" accept-charset="UTF-8">
+    <input type="hidden" name="ik_co_id" value="@Model.ik_co_id" />
+    <input type="hidden" name="ik_pm_no" value="@Model.ik_pm_no" />
+    <input type="hidden" name="ik_am" value="@Model.ik_am" />
+    <input type="hidden" name="ik_cur" value="@Model.ik_cur" />
+    <input type="hidden" name="ik_suc_u" value="@Model.ik_suc_u" />
+    <input type="hidden" name="ik_fal_u" value="@Model.ik_fal_u" />
+    <input type="hidden" name="ik_pnd_u" value="@Model.ik_pnd_u" />
+    <input type="hidden" name="ik_desc" value="This is test payment" />
+    <input type="submit" class="btn btn-success" value="Pay">
+</form>

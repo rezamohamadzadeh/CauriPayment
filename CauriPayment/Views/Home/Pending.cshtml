@@ -1,0 +1,27 @@
+﻿@{
+    ViewData["Title"] = "Pending payment";
+
+}
+
+<div class="alert alert-warning"> Pending payment </div>
+<div class="table-responsive">
+    <table class="table table-bordered table-hover nowarp" width="100%">
+        <thead>
+            <tr>
+                <th>CheckoutId</th>
+                <th>State</th>
+                <th>PaymentID</th>
+                <th>Transaction ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@Model.ik_co_id</td>
+                <td>@Model.ik_inv_st</td>
+                <td>@Model.ik_inv_id</td>
+                <td>@Model.ik_trn_id</td>
+            </tr>
+
+        </tbody>
+    </table>
+</div>

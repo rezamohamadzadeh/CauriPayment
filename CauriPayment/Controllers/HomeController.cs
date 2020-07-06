@@ -28,8 +28,69 @@ namespace CauriPayment.Controllers
             _Config = Config;
         }
 
+        [HttpGet]
+        public IActionResult Payment()
+        {
+            var model = new SCIModel
+            {
+                ik_co_id = _Config["SCI:co_id"],
+                ik_suc_u = _Config["SCI:suc_u"],
+                ik_fal_u = _Config["SCI:fal_u"],
+                ik_pnd_u = _Config["SCI:pnd_u"],
+                ik_pm_no = "ID_4233",
+                ik_am = "1.44",
+                ik_cur = "uah",
+                ik_desc = "Payment Description"
+            };
+            return View(model);
+        }
+
+        public IActionResult Success([FromForm]SCIModel model)
+        {
+
+            return View(model);
+        }
+
+        public IActionResult Fail([FromForm]SCIModel model)
+        {
+            return View(model);
+        }
+
+        public IActionResult Pending([FromForm]SCIModel model)
+        {
+            return View(model);
+        }
+
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [Produces("application/json")]
+        public async Task<IActionResult> SCIPaymentPost([FromForm]SCIModel sCIModel)
+        {
+            var url = "https://sci.interkassa.com";
+
+            var client = _clientFactory.CreateClient();
+
+            var nvc = new List<KeyValuePair<string, string>>();
+            nvc.Add(new KeyValuePair<string, string>("ik_co_id", _Config["SCI:co_id"]));
+            nvc.Add(new KeyValuePair<string, string>("ik_pm_no", sCIModel.ik_pm_no));
+            nvc.Add(new KeyValuePair<string, string>("ik_am", sCIModel.ik_am));
+            nvc.Add(new KeyValuePair<string, string>("ik_desc", sCIModel.ik_desc));
+            nvc.Add(new KeyValuePair<string, string>("ik_act", sCIModel.ik_act));
+            nvc.Add(new KeyValuePair<string, string>("ik_int", sCIModel.ik_int));
+            nvc.Add(new KeyValuePair<string, string>("ik_cur", sCIModel.ik_cur));
+
+
+
+            var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = new FormUrlEncodedContent(nvc) };
+
+            HttpResponseMessage messages = await client.SendAsync(req);
+
+            var content = await messages.Content.ReadAsAsync<SCIPaymentResult>();
+            
+            return Ok(content);
+        }
+
+
+        [HttpPost]
         public async Task<IActionResult> Index([FromBody]PaymentTransaction transAction)
         {
             var url = "https://api.cauri.com/rest-v1/card/process";
