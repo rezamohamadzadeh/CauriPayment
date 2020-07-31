@@ -41,6 +41,7 @@ namespace CauriPayment.Models
         public string ik_co_rfn { get; set; }
         public string ik_inv_id { get; set; }
         public string ik_inv_crt { get; set; }
+        public string ik_pay_token { get; set; }
     }
     
 }

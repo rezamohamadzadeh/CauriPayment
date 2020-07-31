@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
+using System.Reflection;
 
 namespace CauriPayment.Controllers
 {
@@ -45,25 +46,31 @@ namespace CauriPayment.Controllers
             return View(model);
         }
 
-        public IActionResult Success([FromForm]SCIModel model)
+        public IActionResult Success([FromHeader] SCIModel model)
         {
 
             return View(model);
         }
 
-        public IActionResult Fail([FromForm]SCIModel model)
+        public IActionResult maxesh([FromHeader] SCIModel model)
+        {
+
+            return View(model);
+        }
+
+        public IActionResult Fail([FromForm] SCIModel model)
         {
             return View(model);
         }
 
-        public IActionResult Pending([FromForm]SCIModel model)
+        public IActionResult Pending([FromForm] SCIModel model)
         {
             return View(model);
         }
 
         [HttpPost]
         [Produces("application/json")]
-        public async Task<IActionResult> SCIPaymentPost([FromForm]SCIModel sCIModel)
+        public async Task<IActionResult> SCIPaymentPost([FromForm] SCIModel sCIModel)
         {
             var url = "https://sci.interkassa.com";
 
@@ -85,65 +92,92 @@ namespace CauriPayment.Controllers
             HttpResponseMessage messages = await client.SendAsync(req);
 
             var content = await messages.Content.ReadAsAsync<SCIPaymentResult>();
-            
+
             return Ok(content);
         }
 
-
         [HttpPost]
-        public async Task<IActionResult> Index([FromBody]PaymentTransaction transAction)
+        [Produces("application/json")]
+        public IActionResult Index([FromForm] SCIModel transAction)
         {
-            var url = "https://api.cauri.com/rest-v1/card/process";
+            string key = "itKqCZXDKSsQq7IE";
 
-            var client = _clientFactory.CreateClient();
+            IEnumerable<PropertyInfo> properties = transAction.GetType().GetProperties().OrderBy(d => d.Name);
 
-            string[] transActionModel = new string[] { _Config["CauriKeys:project"], transAction.order_id, transAction.description, transAction.user, transAction.card_token, transAction.price, transAction.currency };
-            Array.Sort(transActionModel, StringComparer.InvariantCulture);
             string createPipValue = "";
-            foreach (var item in transActionModel)
+            foreach (var item in properties)
             {
+                var name = item.Name;
+                var value = item.GetValue(transAction);
                 if (string.IsNullOrEmpty(createPipValue))
-                    createPipValue = item;
+                {
+                    if (value != null)
+                        createPipValue = value.ToString();
+                }
                 else
-                    createPipValue += "|" + item;
+                {
+                    if (value != null)
+                        createPipValue += ":" + value.ToString();
+                }
             }
 
-
-            string key = _Config["CauriKeys:privateKey"];
-
-            ASCIIEncoding encoding = new ASCIIEncoding();
-            byte[] keyByte = encoding.GetBytes(key);
-
-            HMACSHA256 hmacsha256 = new HMACSHA256(keyByte);
-
-            byte[] messageBytes = encoding.GetBytes(createPipValue);
-            byte[] hashmessage = hmacsha256.ComputeHash(messageBytes);
-            var signature = ByteToString(hashmessage);
-
-            var nvc = new List<KeyValuePair<string, string>>();
-            nvc.Add(new KeyValuePair<string, string>("project", _Config["CauriKeys:project"]));
-            nvc.Add(new KeyValuePair<string, string>("order_id", transAction.order_id));
-            nvc.Add(new KeyValuePair<string, string>("description", transAction.description));
-            nvc.Add(new KeyValuePair<string, string>("user", transAction.user));
-            nvc.Add(new KeyValuePair<string, string>("card_token", transAction.card_token));
-            nvc.Add(new KeyValuePair<string, string>("price", transAction.price));
-            nvc.Add(new KeyValuePair<string, string>("currency", transAction.currency));
-            nvc.Add(new KeyValuePair<string, string>("acs_return_url", transAction.acs_return_url));
-            nvc.Add(new KeyValuePair<string, string>("recurring", transAction.recurring));
-            nvc.Add(new KeyValuePair<string, string>("attr_server", transAction.attr_server));
-            nvc.Add(new KeyValuePair<string, string>("attr_landing", transAction.attr_landing));
-            //nvc.Add(new KeyValuePair<string, string>("recurring_interval", transAction.recurring_interval));
-            nvc.Add(new KeyValuePair<string, string>("signature", signature));
-
-
-
-            var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = new FormUrlEncodedContent(nvc) };
-
-            HttpResponseMessage messages = await client.SendAsync(req);
-
-            var content = JsonConvert.SerializeObject(await messages.Content.ReadAsStringAsync());
-            return View();
+            createPipValue += ":" + key;
+            var resultBytes = MD5.Create().ComputeHash(Encoding.ASCII.GetBytes(createPipValue));
+            var base64Str = Convert.ToBase64String(resultBytes);
+            return Ok(base64Str);
         }
+        //[HttpPost]
+        //public async Task<IActionResult> Index([FromBody]PaymentTransaction transAction)
+        //{
+        //    var url = "https://api.cauri.com/rest-v1/card/process";
+
+        //    var client = _clientFactory.CreateClient();
+
+        //    string[] transActionModel = new string[] { _Config["CauriKeys:project"], transAction.order_id, transAction.description, transAction.user, transAction.card_token, transAction.price, transAction.currency };
+        //    Array.Sort(transActionModel, StringComparer.InvariantCulture);
+        //    string createPipValue = "";
+        //    foreach (var item in transActionModel)
+        //    {
+        //        if (string.IsNullOrEmpty(createPipValue))
+        //            createPipValue = item;
+        //        else
+        //            createPipValue += "|" + item;
+        //    }
+
+
+        //    string key = _Config["CauriKeys:privateKey"];
+
+        //    ASCIIEncoding encoding = new ASCIIEncoding();
+        //    byte[] keyByte = encoding.GetBytes(key);
+
+        //    HMACSHA256 hmacsha256 = new HMACSHA256(keyByte);
+
+        //    byte[] messageBytes = encoding.GetBytes(createPipValue);
+        //    byte[] hashmessage = hmacsha256.ComputeHash(messageBytes);
+        //    var signature = ByteToString(hashmessage);
+
+        //    var nvc = new List<KeyValuePair<string, string>>();
+        //    nvc.Add(new KeyValuePair<string, string>("project", _Config["CauriKeys:project"]));
+        //    nvc.Add(new KeyValuePair<string, string>("order_id", transAction.order_id));
+        //    nvc.Add(new KeyValuePair<string, string>("description", transAction.description));
+        //    nvc.Add(new KeyValuePair<string, string>("user", transAction.user));
+        //    nvc.Add(new KeyValuePair<string, string>("card_token", transAction.card_token));
+        //    nvc.Add(new KeyValuePair<string, string>("price", transAction.price));
+        //    nvc.Add(new KeyValuePair<string, string>("currency", transAction.currency));
+        //    nvc.Add(new KeyValuePair<string, string>("acs_return_url", transAction.acs_return_url));
+        //    nvc.Add(new KeyValuePair<string, string>("recurring", transAction.recurring));
+        //    nvc.Add(new KeyValuePair<string, string>("attr_server", transAction.attr_server));
+        //    nvc.Add(new KeyValuePair<string, string>("attr_landing", transAction.attr_landing));
+        //    //nvc.Add(new KeyValuePair<string, string>("recurring_interval", transAction.recurring_interval));
+        //    nvc.Add(new KeyValuePair<string, string>("signature", signature));
+
+        //    var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = new FormUrlEncodedContent(nvc) };
+
+        //    HttpResponseMessage messages = await client.SendAsync(req);
+
+        //    var content = JsonConvert.SerializeObject(await messages.Content.ReadAsStringAsync());
+        //    return View();
+        //}
 
         public IActionResult Privacy()
         {
@@ -160,6 +194,41 @@ namespace CauriPayment.Controllers
             return (sbinary);
         }
 
+        public IActionResult PaymentResult()
+        {
+            ViewBag.Desc = "1115070";
+            ViewBag.CoId = "5ecbb2091ae1bd29008b4567";
+            ViewBag.Am = "0.1";
+            return View();
+        }
+        public JsonResult GetPaymentResult(SCIModel sCIModel)
+        {
+            string key = "itKqCZXDKSsQq7IE";
+
+            IEnumerable<PropertyInfo> properties = sCIModel.GetType().GetProperties().OrderBy(d => d.Name);
+
+            string createPipValue = "";
+            foreach (var item in properties)
+            {
+                var name = item.Name;
+                var value = item.GetValue(sCIModel);
+                if (string.IsNullOrEmpty(createPipValue))
+                {
+                    if (value != null)
+                        createPipValue = value.ToString();
+                }
+                else
+                {
+                    if (value != null)
+                        createPipValue += ":" + value.ToString();
+                }
+            }
+
+            createPipValue += ":" + key;
+            var resultBytes = MD5.Create().ComputeHash(Encoding.ASCII.GetBytes(createPipValue));
+            var base64Str = Convert.ToBase64String(resultBytes);
+            return Json(new { sign = base64Str });
+        }
     }
 
 }

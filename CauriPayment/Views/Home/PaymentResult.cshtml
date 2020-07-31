@@ -1,0 +1,115 @@
+﻿@model SCIModel
+
+    <link rel="stylesheet" type="text/css"
+          href="https://www.jqueryscript.net/demo/Customizable-Loading-Modal-Plugin/css/modal-loading.css" />
+    <link rel="stylesheet" type="text/css"
+          href="https://www.jqueryscript.net/demo/Customizable-Loading-Modal-Plugin/css/modal-loading-animate.css" />
+
+    <!-- Button to Open the Modal -->
+    <button type="button" onclick="getWidget2()" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
+        Pay2
+    </button>
+
+    <form id="payment" hidden="hidden" name="payment" method="post" action="https://sci.interkassa.com/" enctype="utf-8">
+        <input type="hidden" id="ik_co_id" name="ik_co_id" value="@ViewBag.CoId" />
+        <input type="hidden" id="ik_pm_no" name="ik_pm_no" value="123" />
+        <input type="hidden" id="ik_am" name="ik_am" value="@ViewBag.Am" />
+        <input type="hidden" id="ik_cur" name="ik_cur" value="EUR" />
+        <input type="hidden" id="ik_act" name="ik_act" value="process" />
+        <input type="hidden" id="ik_desc" name="ik_desc" value="@ViewBag.Desc" />
+        <input type="hidden" id="ik_pw_via" name="ik_pw_via" value="visa_cpaytrz_merchant_rub" />
+        <input type="hidden" id="ik_suc_u" name="ik_suc_u" value="https://swlab.demoapplication.site/Payment/SuccessSci" />
+        <input type="hidden" id="ik_pay_token" name="ik_pay_token" value="">
+        <input type="hidden" id="ik_sign" name="ik_sign" value="">
+        <input type="submit" value="Token">
+    </form>
+    <script type="text/javascript"
+            src="https://www.jqueryscript.net/demo/Customizable-Loading-Modal-Plugin/js/modal-loading.js"></script>
+    <!-- The Modal -->
+    <div class="modal" id="myModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">Payment</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+
+                <!-- Modal body -->
+                <div class="modal-body">
+
+                    <div id="widget-checkout">
+                    </div>
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <script>
+        function getWidget2() {
+
+            $("#widget-checkout").html(null);
+            var loading = null;
+            loading = new Loading();
+            fetch('https://gcdn.tranzzo.com/widget.js').then(response => {
+                if (response.ok) {
+                    $.getScript(response.url, function () {
+                        let widget = Tranzzo.init({
+                            key: 'gxtllw5MQJGh3FZ0bU4TchQqUTSnf5ysru5czKn/HD1GKktO6A2fUgAD0DOJh8VD',
+                            amount: 0.1,
+                            mode: 'inline',
+                            lang: 'en',
+                            selector: 'widget-checkout',
+                            /* Handler for receiving token data */
+                            onToken: function (tokenData) {
+                                /* Handle token data. For example, create direct payment or add card to wallet */
+                                /*backend.submitPayment(orderId, tokenData);*/
+                                var formData = {
+                                    ik_co_id: $("#ik_co_id").val(),
+                                    ik_pm_no: $("#ik_pm_no").val(),
+                                    ik_am: $("#ik_am").val(),
+                                    ik_cur: $("#ik_cur").val(),
+                                    ik_act: $("#ik_act").val(),
+                                    ik_desc: $("#ik_desc").val(),
+                                    ik_pw_via: $("#ik_pw_via").val(),
+                                    ik_suc_u: $("#ik_suc_u").val(),
+                                    ik_pay_token: tokenData.token
+                                };
+                                $.ajax({
+
+                                    url: '/Home/GetPaymentResult',
+                                    type: 'POST',
+                                    contenttype: 'JSON',
+                                    data: { 'sCIModel': formData },
+                                    beforeSend: function () {
+                                        loading = new Loading();
+                                    },
+                                    success: function (res) {
+                                        console.log(res);
+                                        $("#ik_sign").val(res.sign);
+                                        $("#ik_pay_token").val(tokenData.token);                                        
+                                        $("#payment").submit();
+                                    },
+                                    error: function (data) {
+                                        console.log('An error occurred.');
+                                        console.log(data);
+                                    },
+                                    complete: function () {
+                                        loading.out();
+                                    }
+                                });
+                            }
+                        });
+                        widget.open();
+                    });
+                    loading.out();
+                }
+            });
+        }
+    </script>
